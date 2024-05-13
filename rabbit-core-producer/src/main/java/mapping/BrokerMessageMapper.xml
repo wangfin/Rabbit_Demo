@@ -10,4 +10,28 @@
     <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
     <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
 </resultMap>
+
+    <select id="selectByPrimaryKey" resultMap="BaseResultMap">
+    </select>
+
+    <delete id="deleteByPrimaryKey">
+    </delete>
+
+    <insert id="insert">
+    </insert>
+
+    <insert id="insertSelective">
+    </insert>
+
+    <update id="updateByPrimaryKeySelective">
+    </update>
+
+    <update id="updateByPrimaryKeyWithBLOBs">
+    </update>
+
+    <update id="updateByPrimaryKey">
+    </update>
+
+    <select id="changeBrokerMessageStatus">
+    </select>
 </mapper>

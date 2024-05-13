@@ -9,6 +9,6 @@ import org.springframework.context.annotation.Configuration;
  * @Desc 自动装配
  */
 @Configuration
-@ComponentScan(basePackages = {"org.example.rabbit.producer.*"})
+@ComponentScan(basePackages = {"broker", "mapper", "config.*"})
 public class RabbitProducerAutoConfiguration {
 }

@@ -2,11 +2,18 @@ package broker;
 
 import api.Message;
 import api.MessageType;
+import constant.BrokerMessageConst;
+import constant.BrokerMessageStatus;
+import entity.BrokerMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import service.MessageStoreService;
+
+import java.util.Date;
 
 /**
  * @Author wangfin
@@ -23,6 +30,9 @@ public class RabbitBrokerImpl implements RabbitBroker{
 
     @Autowired
     private RabbitTemplateContainer rabbitTemplateContainer;
+
+    @Autowired
+    private MessageStoreService messageStoreService;
 
     /**
      * 迅速发消息
@@ -57,7 +67,24 @@ public class RabbitBrokerImpl implements RabbitBroker{
 
     @Override
     public void reliantSend(Message message) {
+        message.setMessageType(MessageType.RELIANT);
 
+        // 1. 把消息持久化到数据库
+        BrokerMessage brokerMessage = new BrokerMessage();
+        brokerMessage.setMessageId(message.getMessageId());
+        brokerMessage.setStatus(BrokerMessageStatus.SENDING.getCode());
+
+        // tryCount 在最开始发送的时候不需要进行设置
+        // 最大容忍时间
+        brokerMessage.setNextRetry(DateUtils.addMinutes(new Date(), BrokerMessageConst.TIMEOUT));
+        brokerMessage.setCreateTime(new Date());
+        brokerMessage.setUpdateTime(new Date());
+        brokerMessage.setMessage(message);
+
+        messageStoreService.insert(brokerMessage);
+
+        // 2. 发送消息
+        sendKernel(message);
     }
 
     @Override
