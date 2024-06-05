@@ -10,8 +10,9 @@ public enum BrokerMessageStatus {
     SENDING("0", "发送中"),
     SEND_SUCCESS("1", "发送成功"),
     SEND_FAIL("2", "发送失败"),
-    CONSUMED_SUCCESS("3", "消费成功"),
-    CONSUMED_FAIL("4", "消费失败");
+    SEND_FAIL_A_MOMENT("3", "发送失败，稍后重试"),
+    CONSUMED_SUCCESS("4", "消费成功"),
+    CONSUMED_FAIL("5", "消费失败");
 
     private String code;
     private String desc;

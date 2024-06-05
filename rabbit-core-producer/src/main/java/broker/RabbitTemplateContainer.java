@@ -23,6 +23,7 @@ import com.google.common.collect.Maps;
 import serializer.Serializer;
 import serializer.SerializerFactory;
 import serializer.impl.JacksonSerializeFactory;
+import service.MessageStoreService;
 
 /**
  * @Author wangfin
@@ -47,6 +48,9 @@ public class RabbitTemplateContainer implements RabbitTemplate.ConfirmCallback{
 
     @Autowired
     private ConnectionFactory connectionFactory;
+
+    @Autowired
+    private MessageStoreService messageStoreService;
 
     private SerializerFactory serializerFactory = JacksonSerializeFactory.INSTANCE;
 
@@ -94,8 +98,11 @@ public class RabbitTemplateContainer implements RabbitTemplate.ConfirmCallback{
         long sendTime = Long.parseLong(strings.get(1));
 
         if (ack) {
+            // 当broker返回ACK成功时，就是更新一下日志表里对应消息发送状态为SEND_OK
+            messageStoreService.success(messageId);
             log.info("send message is ok, confirm messageId: {}, sendTime: {}", messageId, sendTime);
         } else {
+            messageStoreService.failure(messageId);
             log.info("send message is fail, confirm messageId: {}, sendTime: {}", messageId, sendTime);
         }
     }
