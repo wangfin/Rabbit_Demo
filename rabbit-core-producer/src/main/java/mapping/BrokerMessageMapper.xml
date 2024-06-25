@@ -2,22 +2,37 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="mapper.BrokerMessageMapper">
     <resultMap id="BaseResultMap" type="entity.BrokerMessage">
-    <id column="message_id" property="messageId" jdbcType="VARCHAR"/>
-    <result column="message" property="message" jdbcType="VARCHAR" typeHandler=""/>
-    <result column="try_count" property="tryCount" jdbcType="INTEGER" />
-    <result column="status" property="status" jdbcType="VARCHAR" />
-    <result column="next_retry" property="nextRetry" jdbcType="TIMESTAMP"/>
-    <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
-    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
-</resultMap>
+        <id column="message_id" property="messageId" jdbcType="VARCHAR"/>
+        <result column="message" property="message" jdbcType="VARCHAR" typeHandler=""/>
+        <result column="try_count" property="tryCount" jdbcType="INTEGER" />
+        <result column="status" property="status" jdbcType="VARCHAR" />
+        <result column="next_retry" property="nextRetry" jdbcType="TIMESTAMP"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        message_id, message, try_count, status, next_retry, create_time, update_time
+    </sql>
 
     <select id="selectByPrimaryKey" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from broker_message
+        where message_id = #{messageId,jdbcType=VARCHAR}
     </select>
 
     <delete id="deleteByPrimaryKey">
+        delete from broker_message
+        where message_id = #{messageId,jdbcType=VARCHAR}
     </delete>
 
     <insert id="insert">
+        insert into broker_message (message_id, message, try_count,
+        status, next_retry, create_time,
+        update_time)
+        values (#{messageId,jdbcType=VARCHAR}, #{message,jdbcType=VARCHAR, typeHandler=MessageJsonTypeHandler}, #{tryCount,jdbcType=INTEGER},
+        #{status,jdbcType=VARCHAR}, #{nextRetry,jdbcType=TIMESTAMP}, #{createTime,jdbcType=TIMESTAMP},
+        #{updateTime,jdbcType=TIMESTAMP})
     </insert>
 
     <insert id="insertSelective">
