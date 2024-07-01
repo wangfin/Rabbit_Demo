@@ -49,4 +49,17 @@
 
     <select id="changeBrokerMessageStatus">
     </select>
+
+    <select id="queryBrokerMessageStatus4TimeOut" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from broker_message
+        where status = #{brokerMessageStatus,jdbcType=VARCHAR} and next_retry &lt; sysdate()
+    </select>
+
+    <update id="update4TryCount">
+        update broker_message
+        set try_count = try_count + 1, update_time = #{updateTime,jdbcType=TIMESTAMP}
+        where message_id = #{brokerMessageId,jdbcType=VARCHAR}
+    </update>
 </mapper>

@@ -47,7 +47,15 @@ public class ProducerClient implements MessageProducer {
 
     @Override
     public void send(List<Message> messages) throws MessageRunTimeException {
-
+        messages.forEach(message -> {
+            try {
+                message.setMessageType(MessageType.RAPID);
+                MessageHolder.add(message);
+                send(message);
+            } catch (MessageRunTimeException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     @Override

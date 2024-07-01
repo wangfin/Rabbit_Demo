@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * @Author wangfin
@@ -22,4 +23,6 @@ public interface BrokerMessageMapper {
     int updateByPrimaryKeyWithBLOBs(BrokerMessage record);
     int updateByPrimaryKey(BrokerMessage record);
     void changeBrokerMessageStatus(@Param("brokerMessageId") String brokerMessageId, @Param("status") String status, @Param("updateTime") Date updateTime);
+    List<BrokerMessage> queryBrokerMessageStatus4TimeOut(@Param("brokerMessageStatus") String brokerMessageStatus);
+    Integer update4TryCount(@Param("brokerMessageId") String brokerMessageId, @Param("updateTime") Date updateTime);
 }

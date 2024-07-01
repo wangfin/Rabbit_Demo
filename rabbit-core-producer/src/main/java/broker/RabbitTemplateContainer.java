@@ -4,9 +4,9 @@ import api.Message;
 import api.MessageType;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Maps;
 import convert.GenericMessageConverter;
 import convert.RabbitMessageConverter;
-import exception.MessageException;
 import exception.MessageRunTimeException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -15,15 +15,13 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Map;
-
-import com.google.common.collect.Maps;
 import serializer.Serializer;
 import serializer.SerializerFactory;
 import serializer.impl.JacksonSerializeFactory;
 import service.MessageStoreService;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @Author wangfin
@@ -87,6 +85,9 @@ public class RabbitTemplateContainer implements RabbitTemplate.ConfirmCallback{
         return rabbitMap.get(topic);
     }
 
+    /**
+     * 无论是confirm消息还是reliant消息，发送消息以后broker都会去回调confirm
+     */
     @Override
     public void confirm(CorrelationData correlationData, boolean ack, String cause) {
         // 具体的消息应答
@@ -97,9 +98,17 @@ public class RabbitTemplateContainer implements RabbitTemplate.ConfirmCallback{
         String messageId = strings.get(0);
         long sendTime = Long.parseLong(strings.get(1));
 
+        String messageType = strings.get(2);
+
         if (ack) {
             // 当broker返回ACK成功时，就是更新一下日志表里对应消息发送状态为SEND_OK
-            messageStoreService.success(messageId);
+
+            // 如果当前消息类型为reliant 我们就去数据库查找并更新
+            if (MessageType.RELIANT.endsWith(messageType)) {
+                // 如果是reliant消息，则需要更新数据库
+                // 成功的消息是不落库的
+                messageStoreService.success(messageId);
+            }
             log.info("send message is ok, confirm messageId: {}, sendTime: {}", messageId, sendTime);
         } else {
             messageStoreService.failure(messageId);

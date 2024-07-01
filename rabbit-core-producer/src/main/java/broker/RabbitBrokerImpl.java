@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import service.MessageStoreService;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * @Author wangfin
@@ -52,7 +53,7 @@ public class RabbitBrokerImpl implements RabbitBroker{
 
         AsyncBaseQueue.submit((Runnable) () -> {
             CorrelationData correlationData =
-                    new CorrelationData(String.format("%s#%s", message.getMessageId(), System.currentTimeMillis()));
+                    new CorrelationData(String.format("%s#%s#%s", message.getMessageId(), System.currentTimeMillis(), message.getMessageType()));
             String topic = message.getTopic();
             String routingKey = message.getRoutingKey();
 
@@ -69,19 +70,23 @@ public class RabbitBrokerImpl implements RabbitBroker{
     public void reliantSend(Message message) {
         message.setMessageType(MessageType.RELIANT);
 
-        // 1. 把消息持久化到数据库
-        BrokerMessage brokerMessage = new BrokerMessage();
-        brokerMessage.setMessageId(message.getMessageId());
-        brokerMessage.setStatus(BrokerMessageStatus.SENDING.getCode());
+        BrokerMessage bm = messageStoreService.selectByMessageId(message.getMessageId());
+        // 数据库中没有这条数据才会进行重发
+        if (bm == null) {
+            // 1. 把消息持久化到数据库
+            BrokerMessage brokerMessage = new BrokerMessage();
+            brokerMessage.setMessageId(message.getMessageId());
+            brokerMessage.setStatus(BrokerMessageStatus.SENDING.getCode());
 
-        // tryCount 在最开始发送的时候不需要进行设置
-        // 最大容忍时间
-        brokerMessage.setNextRetry(DateUtils.addMinutes(new Date(), BrokerMessageConst.TIMEOUT));
-        brokerMessage.setCreateTime(new Date());
-        brokerMessage.setUpdateTime(new Date());
-        brokerMessage.setMessage(message);
+            // tryCount 在最开始发送的时候不需要进行设置
+            // 最大容忍时间
+            brokerMessage.setNextRetry(DateUtils.addMinutes(new Date(), BrokerMessageConst.TIMEOUT));
+            brokerMessage.setCreateTime(new Date());
+            brokerMessage.setUpdateTime(new Date());
+            brokerMessage.setMessage(message);
 
-        messageStoreService.insert(brokerMessage);
+            messageStoreService.insert(brokerMessage);
+        }
 
         // 2. 发送消息
         sendKernel(message);
@@ -91,5 +96,24 @@ public class RabbitBrokerImpl implements RabbitBroker{
     public void confirmSend(Message message) {
         message.setMessageType(MessageType.COMFIRM);
         sendKernel(message);
+    }
+
+    @Override
+    public void sendMessages() {
+        List<Message> messages = MessageHolder.clear();
+        messages.forEach(message -> {
+            MessageHolderAsyncQueue.submit((Runnable) () -> {
+                CorrelationData correlationData =
+                        new CorrelationData(String.format("%s#%s#%s", message.getMessageId(), System.currentTimeMillis(), message.getMessageType()));
+                String topic = message.getTopic();
+                String routingKey = message.getRoutingKey();
+
+                // 从池化里面取RabbitTemplate
+                RabbitTemplate rabbitTemplate = rabbitTemplateContainer.getTemplate(message);
+
+                rabbitTemplate.convertAndSend(topic, routingKey, message, correlationData);
+                log.info("#RabbitBrokerImpl.sendMessages# send to rabbitmq, messageId:{}", message.getMessageId());
+            });
+        });
     }
 }

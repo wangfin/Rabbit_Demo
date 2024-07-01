@@ -15,4 +15,6 @@ public interface RabbitBroker {
     void confirmSend(Message message);
 
     void reliantSend(Message message);
+
+    void sendMessages();
 }
